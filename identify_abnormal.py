@@ -34,7 +34,7 @@ class IdentifyAbnormal:
         self.num_all_users = len(self.user_representations)
         self.fake_user_ids = list(range(self.num_real_users, self.num_all_users))
 
-        self.thresholds = [0.95, 0.90, 0.85, 0.80, 0.75]
+        self.thresholds = [0.85, 0.80, 0.75]
 
     def cluster(self):
         # === 1. 读入数据
