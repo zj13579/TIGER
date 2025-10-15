@@ -108,7 +108,6 @@ class IdentifyAbnormal:
             count = sum(1 for _, prob in result if prob > th)
             if (len(self.user_representations) * 0.01 < count < len(self.user_representations) * 0.3):
                 th_list.append(th)
-        print(f'需要循环的阈值：{th_list}')
 
         top100_ids_list = []
         results_summary = []
