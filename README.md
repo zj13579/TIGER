@@ -1,0 +1,1 @@
+The code here uses the TIGER method proposed in the paper "Target Item Identification for Injection Attacks in Recommender Systems via Graph-Enhanced User Representations," which is primarily used for target item identification in recommendation systems.
