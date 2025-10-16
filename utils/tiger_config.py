@@ -6,9 +6,9 @@ def _get_dataset_defaults(dataset_name: str) -> dict:
             # 计算商品特征向量、用户隐特征向量
             latent_factors=32,
             lr_v=0.05,
-            epochs_v=5000,
+            epochs_v=4000,
             lr_u=0.1,
-            epochs_u=2000,
+            epochs_u=800,
             # 特征构造
             n_global=128,
             global_kmeans_iter=50,
@@ -20,7 +20,7 @@ def _get_dataset_defaults(dataset_name: str) -> dict:
             # 特征融合
             pca_dimension=16,
             # GAT
-            num_epochs_gat=500,
+            num_epochs_gat=200,
             hidden_dim=64,
             out_dim=32,
             info_th=1,      # 默认为1
@@ -30,7 +30,7 @@ def _get_dataset_defaults(dataset_name: str) -> dict:
             # 识别目标商品
             lat_fac=64,
             lr_it=0.1,
-            num_epochs_it=300,
+            num_epochs_it=200,
             lambda_value_it=0.001,
             # 识别异常样本
             w=[0.6, 0.2, 0.2],
