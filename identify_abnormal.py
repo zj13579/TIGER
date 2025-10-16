@@ -143,7 +143,7 @@ class IdentifyAbnormal:
 
         top100_ids_list = top100_ids_list[::-1]
         DR_list = []
-        for i in range(1, 6):
+        for i in range(2):
             k = len(target_item_list) * i
             top_target_ids_list = [sublist[:k] for sublist in top100_ids_list]
 
