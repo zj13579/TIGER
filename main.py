@@ -113,13 +113,13 @@ class TIGER:
         )
         print(f"----------GAT训练完成，得到用户表征----------\n")
 
-        # 6) 识别异常样本，计算 DR_1T~DR_5T
+        # 6) 识别异常样本，计算 DR_1T-DR_2T
         iden_abno = IdentifyAbnormal(
                 user_representations, self.dataset_name, self.n_items,
                 c.lat_fac, c.lr_it, c.num_epochs_it, c.lambda_value_it
         )
         DR_list = iden_abno.method_4(target_item_list, c.w)
-        print(f"DR_1T~DR_5T: {DR_list}\n")
+        print(f"DR_1T-DR_2T: {DR_list}\n")
 
         return target_item_list, DR_list
 
@@ -135,4 +135,4 @@ if __name__ == "__main__":
     )
     pipeline = TIGER(config=config, **init_kwargs)
     _, DR_list = pipeline.run(seed=0)
-    print(f"\nDR_1T~DR_5T: {DR_list}")
+    print(f"\nDR_1T-DR_2T: {DR_list}")
