@@ -135,4 +135,8 @@ if __name__ == "__main__":
     )
     pipeline = TIGER(config=config, **init_kwargs)
     _, DR_list = pipeline.run(seed=0)
+<<<<<<< Updated upstream
     print(f"\nDR_1T-DR_2T: {DR_list}")
+=======
+    print(f"\nDR_1T-DR_2T: {DR_list}")
+>>>>>>> Stashed changes

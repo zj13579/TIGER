@@ -84,14 +84,3 @@ class AttackSimulator:
                 np.save(f"./results/{self.dataset_name}/{name}_fake_profiles.npy", fake_profiles[name])
 
         return target_items, fake_profiles
-
-# # ===================== 使用示例 =====================
-# if __name__ == "__main__":
-#     simulator = AttackSimulator(
-#         dataset_path="./datasets/ml-100k/remained_dataset.txt",
-#         n_items=1682,  # 商品总数
-#         num_target_items=5,
-#         save_dir="./results"
-#     )
-#
-#     fake_profiles = simulator.run(save=True)  # 返回 dict，包含四种攻击的虚假画像

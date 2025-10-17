@@ -170,7 +170,7 @@ class IdentifyAbnormal:
             ))
             top_target_ids = unique_items[:k]
             count = len(set(target_item_list) & set(top_target_ids))  # 输出最终识别出的目标商品数量
-            DR = round(count / 5, 4)
+            DR = round(count / len(target_item_list), 4)
             DR_list.append(DR)
 
         return DR_list
