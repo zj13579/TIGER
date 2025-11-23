@@ -20,13 +20,11 @@ def read_data(num_users, num_items, path):
             user_ids.append(user)
             item_ids.append(item)
 
-            # 将评分填充到对应的位置（索引从0开始）
             rating_matrix[user, item] = rating
 
     user_ids = torch.tensor(user_ids)
     item_ids = torch.tensor(item_ids)
 
-    # 将数据转换为PyTorch张量
     rating_matrix = torch.from_numpy(rating_matrix)
 
     return user_ids, item_ids, rating_matrix
@@ -50,12 +48,10 @@ class MF(nn.Module):
 
         self.user_embeddings = nn.Embedding(num_users, latent_factors)
 
-        # 商品向量是否固定
         self.item_embeddings = nn.Embedding(num_items, latent_factors)
         if item_vectors is not None:
             self.item_embeddings.weight = nn.Parameter(item_vectors.to(device), requires_grad=False)
 
-        # ✅ 保存标志，方便 train_model 使用
         self.item_vectors_fixed = item_vectors is not None
 
     def forward(self):
@@ -71,7 +67,6 @@ class MF(nn.Module):
         train_data = train_data.to(self.device)
         criterion = nn.MSELoss().to(self.device)
 
-        # ✅ 根据 item_vectors 是否固定来决定优化器
         if self.item_vectors_fixed:
             optimizer = optim.Adam(self.user_embeddings.parameters(), lr)  # 只更新用户向量
         else:
@@ -174,16 +169,14 @@ def obtain_filtered_indices(user_ids, item_ids, defaultdict, num_items):
     for user_ids, item_ids in ratings_indices_list:
         ratings_indices_dict[user_ids].append(item_ids)
 
-    # 创建每一个sublist元素的补集,最终得到针对每个用户所有未评分商品id的集合
     filtered_list = []
     full_set = set(range(num_items))
     for i in range(len(ratings_indices_dict)):
         sub_list = ratings_indices_dict[i]
-        complement_set = full_set - set(sub_list)  # 计算补集
+        complement_set = full_set - set(sub_list)
         complement_list = list(complement_set)
         filtered_list.append(complement_list)
 
-    # 构造未评分商品的坐标列表
     filtered_indices = []
     for i in range(len(filtered_list)):
         result = [(i, j) for j in filtered_list[i]]
@@ -200,7 +193,6 @@ def obtain_rec_list(ratings_pred, filtered_indices, defaultdict, num_users, rati
     for user_id, item_id, rating in filtered_ratings_list:
         user_ratings_dict[user_id].append((item_id, rating))
 
-    # 同时包含item-id与rating的前10件商品的推荐列表
     Top_K_list = []
     for i in range(num_users):
         sorted_result = sorted(user_ratings_dict[i], key=lambda x: x[1], reverse=True)
@@ -222,7 +214,7 @@ def obtain_rec_list(ratings_pred, filtered_indices, defaultdict, num_users, rati
     for i in range(num_users):
         sorted_result = sorted(user_ratings_dict[i], key=lambda x: x[1], reverse=True)
         rec_list.append(sorted_result)
-    # 只包含item_id的所有商品的推荐列表
+
     rec_item_list = []
     for i in range(num_users):
         sublist = []
