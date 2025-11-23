@@ -31,20 +31,20 @@ class LFM(nn.Module):
 
 
     def train_model(self, path, lr, num_epochs, lambda_value):
-        user_train_ids, item_train_ids, train_data = read_data(self.num_users, self.num_items, path=path)  # 读入训练集上的数据
+        user_train_ids, item_train_ids, train_data = read_data(self.num_users, self.num_items, path=path)
 
-        self.to(self.device)  # 创建模型实例
+        self.to(self.device)
         train_data = train_data.to(self.device)
         criterion = nn.MSELoss().to(self.device)
         optimizer = optim.Adam(self.parameters(), lr)
 
         # 模型训练
-        train_ratings = train_data[user_train_ids, item_train_ids]  # 获取训练集上相应位置的真实评分
+        train_ratings = train_data[user_train_ids, item_train_ids]
 
         for epoch in range(num_epochs):
             optimizer.zero_grad()
-            _, _, ratings_pred, loss_regularization = self(lambda_value)  # 得到这批样本的评分预测结果和正则化项损失
-            train_ratings_pred = ratings_pred[user_train_ids, item_train_ids].to(torch.float64)  # 获取相应位置上的预测评分
+            _, _, ratings_pred, loss_regularization = self(lambda_value)
+            train_ratings_pred = ratings_pred[user_train_ids, item_train_ids].to(torch.float64)
             train_loss = criterion(train_ratings_pred, train_ratings) + loss_regularization
             train_loss.backward()
             optimizer.step()
@@ -60,18 +60,18 @@ class LFM(nn.Module):
         user_train_ids = nonzero_indices[:, 0]
         item_train_ids = nonzero_indices[:, 1]
 
-        self.to(self.device)  # 创建模型实例
+        self.to(self.device)
         poisoned_train_data = poisoned_train_data.to(self.device)
         criterion = nn.MSELoss().to(self.device)
         optimizer = optim.Adam(self.parameters(), lr)
 
         # 模型训练
-        train_ratings = poisoned_train_data[user_train_ids, item_train_ids]  # 获取训练集上相应位置的真实评分
+        train_ratings = poisoned_train_data[user_train_ids, item_train_ids]
 
         for epoch in range(num_epochs):
             optimizer.zero_grad()
-            _, _, ratings_pred, loss_regularization = self(lambda_value)  # 得到这批样本的评分预测结果和正则化项损失
-            train_ratings_pred = ratings_pred[user_train_ids, item_train_ids].to(torch.float64)  # 获取相应位置上的预测评分
+            _, _, ratings_pred, loss_regularization = self(lambda_value)
+            train_ratings_pred = ratings_pred[user_train_ids, item_train_ids].to(torch.float64)
             train_loss = criterion(train_ratings_pred, train_ratings) + loss_regularization
             train_loss.backward()
             optimizer.step()
