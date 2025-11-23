@@ -20,9 +20,9 @@ class MatrixFactorization:
         users = data['user'].unique()
         mf = MF(len(users), self.n_items, self.latent_factors, self.device, item_vectors=None)
         mf.train_model(real_dat_path, lr_v, epochs_v)
-        item_vectors = mf.item_embeddings.weight.data.cpu()  # 从训练好的模型中提取商品的向量化表示
+        item_vectors = mf.item_embeddings.weight.data.cpu()
         save_path = f'./results/{self.dataset_name}/item_vectors.pt'
-        torch.save(item_vectors, save_path)  # 保存张量
+        torch.save(item_vectors, save_path)
 
         print('---------------商品向量已保存---------------\n')
         return item_vectors
@@ -34,13 +34,12 @@ class MatrixFactorization:
         max_user_id = data['user'].max()
         n_fake_users, n_items = fake_profiles.shape
 
-        # 转换 fake_profiles 为 DataFrame 格式（user, item, rating）
         fake_rows = []
         for i in range(n_fake_users):
             user_id = max_user_id + 1 + i
             for item_id in range(n_items):
                 rating = fake_profiles[i, item_id]
-                if rating > 0:  # 只保留非零评分
+                if rating > 0:
                     fake_rows.append([user_id, item_id, int(rating)])
 
         fake_df = pd.DataFrame(fake_rows, columns=['user', 'item', 'rating'])
