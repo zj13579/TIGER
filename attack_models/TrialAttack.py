@@ -174,9 +174,9 @@ class NoiseSampler:
         return e
 
 
-# =========================
-# 主流程（极简 TrialAttack）
-# =========================
+# ======
+# 主流程
+# ======
 def _trialattack_generate(data: pd.DataFrame,
                           target_item_list: List[int],
                           num_items: int,
