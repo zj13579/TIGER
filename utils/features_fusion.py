@@ -61,7 +61,7 @@ class FeaturesFusion:
         X_global = []
         uid_list = []
         for uid, vec in user_global_features.items():
-            padded = vec + [0.0] * (max_len - len(vec))  # 结合评分偏离度和评分重要性的特征定义，这里用0来填充也是比较合理的
+            padded = vec + [0.0] * (max_len - len(vec))
             X_global.append(padded)
             uid_list.append(uid)
         X_global = np.array(X_global)
@@ -91,9 +91,9 @@ class FeaturesFusion:
             df_all = pd.concat([df_local, df_global, df_pref], axis=1).sort_index()
             # df_all = df_pref.sort_index()
 
-        df_all.fillna(0.0, inplace=True)  # 有些用户可能少部分特征缺失，填充0
-        user_behavior_features = torch.tensor(df_all.values, dtype=torch.float32)  # 转换成tensor的数据格式
-        print("最终用户特征向量 shape:", user_behavior_features.shape)  # 最终用户特征向量 shape: [num_users, 24]
+        df_all.fillna(0.0, inplace=True)
+        user_behavior_features = torch.tensor(df_all.values, dtype=torch.float32)
+        print("最终用户特征向量 shape:", user_behavior_features.shape)
         torch.save(user_behavior_features, f'./results/{self.dataset_name}/user_behavior_features_1.pt')
 
         return user_behavior_features
@@ -124,7 +124,7 @@ class FeaturesFusion:
         for uid in user_deviation:
             dev_vec = user_deviation[uid]
             imp_vec = user_importance[uid]
-            global_vec = dev_vec + imp_vec  # 长度为用户评分数量的两倍
+            global_vec = dev_vec + imp_vec
             user_global_features[uid] = global_vec
         # 对第二类特征进行 padding
         global_features_tensor_list = [torch.tensor(v, dtype=torch.float32) for v in user_global_features.values()]
@@ -169,7 +169,7 @@ class FeaturesFusion:
             fusion_model = FeatureAttentionFusion(input_dim)
             user_behavior_features = fusion_model(x3)
 
-        print("最终用户特征向量 shape:", user_behavior_features.shape)  # 最终用户特征向量 shape: [num_users, 64]
+        print("最终用户特征向量 shape:", user_behavior_features.shape)
         torch.save(user_behavior_features, f'./results/{self.dataset_name}/user_behavior_features_2.pt')
 
         return user_behavior_features
@@ -200,7 +200,7 @@ class FeaturesFusion:
         for uid in user_deviation:
             dev_vec = user_deviation[uid]
             imp_vec = user_importance[uid]
-            global_vec = dev_vec + imp_vec  # 长度为用户评分数量的两倍
+            global_vec = dev_vec + imp_vec
             user_global_features[uid] = global_vec
 
         # 对第二类特征进行 padding（对齐到相同长度）
