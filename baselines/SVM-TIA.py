@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 from sklearn.preprocessing import StandardScaler, normalize
 from sklearn.svm import SVC, OneClassSVM
-from sklearn.neighbors import NearestNeighbors  # 备用
+from sklearn.neighbors import NearestNeighbors
 
 # =========================
 # SVM-TIA 主类
