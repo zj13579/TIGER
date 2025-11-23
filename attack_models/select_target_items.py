@@ -29,7 +29,6 @@ def obtain_target_items(num_items, data, dataset_name, num_target_items, seed=No
     full_stats = pd.concat([rated_stats, missing_df], ignore_index=True).sort_values('item_id').reset_index(drop=True)
 
     # 设置评分数分桶规则
-
     if dataset_name == "ml-100k":
         bins = [0, 10, 200, float('inf')]
         labels = ['0-9', '10-199', '200+']
@@ -53,7 +52,7 @@ def obtain_target_items(num_items, data, dataset_name, num_target_items, seed=No
         # print('---')
 
     if dataset_name == "ml-100k":
-        unpopular_items_list = bucket_dict['0-9']  # 数量：210+510个（210未评分商品）
+        unpopular_items_list = bucket_dict['0-9']
         random_items_list = bucket_dict['10-199']
         popular_items_list = bucket_dict['200+']
     elif dataset_name == "ml-1m":
@@ -68,6 +67,6 @@ def obtain_target_items(num_items, data, dataset_name, num_target_items, seed=No
     # 从列表中随机抽取一定数量不重复的元素
     unpopular_items = random.sample(unpopular_items_list, k=num_target_items)
     random_items = random.sample(random_items_list, k=num_target_items)
-    popular_items = random.sample(popular_items_list, k=num_target_items)  # 从流行商品中随机选择5件商品作为’selected_items‘
+    popular_items = random.sample(popular_items_list, k=num_target_items)
 
     return unpopular_items, random_items, popular_items, most_popular_items
