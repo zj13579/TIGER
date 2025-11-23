@@ -327,7 +327,6 @@ class IRM_TIA:
     ) -> Dict[str, float]:
         self._set_seed(seed)
 
-        # 延迟导入匹配你的项目结构
         from attack_models.Heuristic_attacks import AttackSimulator
         # from attack_models.PGA_attack import AttackSimulator
         # from attack_models.SGLD_attack import AttackSimulator
