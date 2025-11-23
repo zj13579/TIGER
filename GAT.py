@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 
 from copy import deepcopy
 
-# 设置随机性参数
 seed = 0
 random.seed(seed)
 np.random.seed(seed)
@@ -24,7 +23,6 @@ torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
-# 增加确定性设置
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 torch.use_deterministic_algorithms(True, warn_only=True)
@@ -43,7 +41,6 @@ class WeightedGATConv(MessagePassing):
     def __init__(self, in_channels, out_channels, negative_slope=0.2):
         super().__init__(aggr='add')
         self.lin = nn.Linear(in_channels, out_channels, bias=False)
-        # 注意力参数做“源/宿”分解，不再拼2F
         self.a_src = nn.Parameter(torch.Tensor(out_channels))
         self.a_dst = nn.Parameter(torch.Tensor(out_channels))
         self.negative_slope = negative_slope
@@ -60,43 +57,35 @@ class WeightedGATConv(MessagePassing):
         if edge_weight is not None:
             edge_weight = edge_weight.to(dev, dtype=torch.float32)
 
-        # 为保证可复现性，你之前关掉了 TF32/AMP；这里保持一致
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
 
-        # 线性投影（fp32）
         with torch.amp.autocast(device_type='cuda', enabled=False):
             x = self.lin(x)  # [N, F]
 
-        # 预计算节点打分，内存 O(NF)
         # s_src = <x, a_src>, s_dst = <x, a_dst>
         s_src = (x * self.a_src).sum(dim=-1)  # [N]
         s_dst = (x * self.a_dst).sum(dim=-1)  # [N]
 
-        # 取边两端的打分并相加得到注意力 logits（不构造[E,F]或[E,2F]）
-        i, j = edge_index[1], edge_index[0]  # MessagePassing里 index 是目标端 i
-        alpha = s_src[j] + s_dst[i]  # [E]
+        i, j = edge_index[1], edge_index[0]
+        alpha = s_src[j] + s_dst[i]
         alpha = F.leaky_relu(alpha, self.negative_slope)
-        alpha = softmax(alpha, i)  # 以目标端 i 做归一化
+        alpha = softmax(alpha, i)
 
         if edge_weight is not None:
-            # 评分权重做乘性调制
             alpha = alpha * edge_weight
 
         return self.propagate(edge_index, x=x, alpha=alpha)
 
     def message(self, x_j, alpha):
-        # 仅构造 [E, F]（而非 [E, 2F]），显存减半
         return x_j * alpha.unsqueeze(-1)
 
 def message(self, x_i, x_j, edge_weight, index):
-    # [E, 2*F] * [1, 2*F] -> [E, 2*F] -> sum(-1) -> [E]
     alpha = (torch.cat([x_i, x_j], dim=-1) * self.att).sum(dim=-1)
     alpha = F.leaky_relu(alpha)
-    alpha = softmax(alpha, index)  # index 对应目标端 i
+    alpha = softmax(alpha, index)
 
     if edge_weight is not None:
-        # edge_weight 已是一维连续 [E]
         assert edge_weight.numel() == alpha.numel(), \
             f"edge_weight({edge_weight.numel()}) != alpha({alpha.numel()})"
         alpha = alpha * edge_weight
@@ -113,7 +102,7 @@ class GATEncoder(nn.Module):
     def forward(self, x, edge_index, edge_attr):
         x = F.relu(self.gat1(x, edge_index, edge_attr))
         x = self.gat2(x, edge_index, edge_attr)
-        return x  # 输出节点表示
+        return x
 
 
 class LossFunction:
@@ -126,13 +115,12 @@ class LossFunction:
 
     # == (1) 信息丰富度损失
     def predict_ratings_from_embs(self, user_embs):
-        u = user_embs[self.user_idx]  # [B, D]
-        v = self.item_embs[self.item_idx]  # [B, D]
-        r_hat = (u * v).sum(dim=1)  # 内积预测 [B]
+        u = user_embs[self.user_idx]
+        v = self.item_embs[self.item_idx]
+        r_hat = (u * v).sum(dim=1)
         return r_hat
 
     def info_richness_loss(self, user_embs_gat, user_embs_mf, rating, squared=False):
-        # user_idx, item_idx, rating are 1D tensors for a batch
         r_gat = self.predict_ratings_from_embs(user_embs_gat)
         r_mf = self.predict_ratings_from_embs(user_embs_mf)
         if squared:
@@ -151,16 +139,16 @@ class LossFunction:
 
         if metric == 'cosine':
             norm_emb = F.normalize(user_embeddings, p=2, dim=1)
-            sim_matrix = torch.matmul(norm_emb, norm_emb.T)  # [N, N]
+            sim_matrix = torch.matmul(norm_emb, norm_emb.T)
         elif metric == 'euclidean':
-            dist_matrix = torch.cdist(user_embeddings, user_embeddings, p=2)  # [N, N]
-            sim_matrix = -dist_matrix  # 越大越相似
+            dist_matrix = torch.cdist(user_embeddings, user_embeddings, p=2)
+            sim_matrix = -dist_matrix
 
         positive_idx = []
         negative_idx = []
 
         for i in range(N):
-            sim_matrix[i, i] = -float('inf')  # 避免选到自己
+            sim_matrix[i, i] = -float('inf')
             pos = torch.argmax(sim_matrix[i]).item()
             neg = torch.argmin(sim_matrix[i]).item()
             positive_idx.append(pos)
@@ -179,7 +167,7 @@ class LossFunction:
         pos_dist = F.pairwise_distance(anchor, positive, p=2)
         neg_dist = F.pairwise_distance(anchor, negative, p=2)
 
-        beta = 0.5 * (pos_dist - neg_dist).mean()  # 确定beta的值
+        beta = 0.5 * (pos_dist - neg_dist).mean()
         loss = F.relu(pos_dist - neg_dist + beta)
 
         return loss.mean()
@@ -193,22 +181,19 @@ class GATs:
                                names=['user', 'item', 'rating'])
         self.num_users = self.df_train['user'].max() + 1
         self.user_latent_features = torch.load(f'./results/{self.dataset_name}/user_latent_features.pt')
-        self.item_vectors = torch.load(f'./results/{self.dataset_name}/item_vectors.pt')  # shape: [num_items, d_item]
+        self.item_vectors = torch.load(f'./results/{self.dataset_name}/item_vectors.pt')
         self.device = device
 
     def prepare_data(self, user_behavior_features, use_latent_features: bool = True):
-        # === 0) 先构用户/物品特征 ===
         if use_latent_features:
             user_features = torch.cat([self.user_latent_features, user_behavior_features], dim=1)
         else:
             user_features = user_behavior_features
 
-        # === 1) 以“边里出现的最大ID + 1”为准，统一 U/I/N（与构图严格一致）===
         U_edges = int(self.df_train['user'].max()) + 1
         I_edges = int(self.df_train['item'].max()) + 1
         N_edges = U_edges + I_edges
 
-        # === 2) 将特征矩阵对齐到 U_edges / I_edges（不足则补零，多了则截断）===
         def ensure_rows(mat: torch.Tensor, rows: int) -> torch.Tensor:
             r = int(mat.size(0))
             if r == rows:
@@ -219,33 +204,29 @@ class GATs:
             else:
                 return mat[:rows]
 
-        user_features = ensure_rows(user_features, U_edges)  # [U_edges, du]
-        item_vectors = ensure_rows(self.item_vectors, I_edges)  # [I_edges, di]
+        user_features = ensure_rows(user_features, U_edges)
+        item_vectors = ensure_rows(self.item_vectors, I_edges)
 
-        # === 3) 构造边（双向），物品统一 +U_edges 偏移 ===
         user_train_indices = torch.tensor(self.df_train['user'].values, dtype=torch.long)
         item_train_indices = torch.tensor(self.df_train['item'].values, dtype=torch.long) + U_edges
         edge_index = torch.stack(
             [torch.cat([user_train_indices, item_train_indices], dim=0),
              torch.cat([item_train_indices, user_train_indices], dim=0)],
             dim=0
-        )  # [2, 2E]
+        )
 
-        # === 4) 边权重（评分 Min-Max 到 [0,1]，返回一维 [2E]）===
         train_ratings = torch.tensor(self.df_train['rating'].values, dtype=torch.float32)
         rmin, rmax = train_ratings.min(), train_ratings.max()
         train_ratings = (train_ratings - rmin) / (rmax - rmin + 1e-12)
-        # edge_attr = torch.cat([train_ratings, train_ratings], dim=0).contiguous()  # [2E]
+        # edge_attr = torch.cat([train_ratings, train_ratings], dim=0).contiguous()
         edge_attr = torch.cat([train_ratings, train_ratings], dim=0).to(torch.float16).contiguous()
 
-        # === 5) 构建节点特征，行数必须 = N_edges ===
         feature_aligner = FeatureAligner(item_dim=item_vectors.shape[1], user_dim=user_features.shape[1])
-        x = feature_aligner(user_features, item_vectors).contiguous()  # 期望 [N_edges, D]
+        x = feature_aligner(user_features, item_vectors).contiguous()
         assert x.size(0) == N_edges, f"x rows {x.size(0)} != N_edges {N_edges} (U={U_edges}, I={I_edges})"
         assert edge_index.max().item() < N_edges and edge_index.min().item() >= 0, \
             f"edge_index out of range: max={edge_index.max().item()} vs N={N_edges}"
 
-        # === 6) 打包 Data 并 detach ===
         data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
         data.x = data.x.detach()
         data.edge_index = data.edge_index.detach()
@@ -286,11 +267,11 @@ class GATs:
         )
 
         # ========== 早停与“接近”判定参数 ==========
-        close_rel = 0.15  # 相对阈值：|a-b| <= close_rel * ((a+b)/2)
-        close_abs = 0.02  # 绝对阈值：|a-b| <= close_abs
-        sum_tol = 1e-4  # 最小改进幅度（和的改进需超过该阈值）
-        patience = 8  # 在“接近”条件下，和无改进累计到多少轮停止
-        min_epochs = 20  # 至少训练这么多轮后才考虑早停
+        close_rel = 0.15
+        close_abs = 0.02
+        sum_tol = 1e-4
+        patience = 8
+        min_epochs = 20
 
         best_sum = float("inf")
         best_epoch = -1
@@ -298,10 +279,8 @@ class GATs:
         best_user_emb = None
         epochs_since_best = 0
 
-        # 记录曲线：使用两项加权之后的“和”
         loss_list = []
 
-        # 固定当前的权重
         lambda_info = 1.0 / info_th
         lambda_cluster = 1.0 / cluster_th
 
