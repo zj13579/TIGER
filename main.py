@@ -1,5 +1,5 @@
 import os
-os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"   # 不行可换为 ":16:8"
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 import torch
 torch.backends.cuda.matmul.allow_tf32 = False
@@ -28,7 +28,6 @@ from utils.matrix_factorization import MatrixFactorization
 from typing import List, Tuple
 from utils.tiger_config import build_config
 
-# 屏蔽这个 FutureWarning
 warnings.filterwarnings(
     "ignore",
     message=r".*'force_all_finite' was renamed to 'ensure_all_finite'.*",
