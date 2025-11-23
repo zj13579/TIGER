@@ -1,6 +1,3 @@
-'''
-将异常样本加入到真实数据集中进行模型训练，观察前后推荐结果的变化，判断目标商品
-'''
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -11,8 +8,8 @@ from utils.functions import *
 from collections import defaultdict
 import math
 
-np.random.seed(seed=0)  # 设置的随机数种子
-torch.manual_seed(seed=0)  # 设置torch上面的随机数种子np上面
+np.random.seed(seed=0)
+torch.manual_seed(seed=0)
 
 
 class IdentifyTargets:
@@ -28,7 +25,7 @@ class IdentifyTargets:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.df = pd.read_csv(f'./datasets/{self.dataset_name}/real_dataset.txt', sep=' ', header=None, names=['user', 'item', 'rating'])
-        self.df_abnormal = pd.read_csv(f'./datasets/{self.dataset_name}/abnormal_samples.txt', sep=' ', header=None, names=['user', 'item', 'rating'])  # 方案一得到的异常样本
+        self.df_abnormal = pd.read_csv(f'./datasets/{self.dataset_name}/abnormal_samples.txt', sep=' ', header=None, names=['user', 'item', 'rating'])
 
     def attack_before(self):
 
@@ -83,8 +80,8 @@ class IdentifyTargets:
 
     def calculate_rank_changes_with_freq(self, origin_rec_list, rec_list):
 
-        all_item_changes = defaultdict(list)  # {商品id: [排名变化1, 排名变化2, ...]}
-        item_user_count = defaultdict(int)  # {商品id: 出现的用户数}
+        all_item_changes = defaultdict(list)
+        item_user_count = defaultdict(int)
 
         # 1. 收集每个商品的排名变化
         for origin_list, new_list in zip(origin_rec_list, rec_list):
@@ -123,7 +120,7 @@ class IdentifyTargets:
     def inference_target_items(self, target_item_list):
         _, origin_rec_list = self.attack_before()
         _, rec_list = self.attack_after()
-        remained_rec_list = rec_list[:len(origin_rec_list)]  # 只保留真实用户商品推荐的排名变化
+        remained_rec_list = rec_list[:len(origin_rec_list)]
         suspicious_items = self.calculate_rank_changes_with_freq(origin_rec_list, remained_rec_list)
         top_target_ids = [v['item_id'] for v in suspicious_items[:100]]
 
