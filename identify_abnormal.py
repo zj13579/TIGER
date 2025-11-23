@@ -39,15 +39,15 @@ class IdentifyAbnormal:
     def cluster(self):
         # === 1. 读入数据
         print(f'user_representations.shape:{self.user_representations.shape}')
-        Z = self.user_representations.detach().cpu().numpy()  # 将原来的张量变成数组的数据类型
+        Z = self.user_representations.detach().cpu().numpy()
         scaler = StandardScaler()
-        Z_std = scaler.fit_transform(Z).astype(np.float64)  # 标准化+固定精度
+        Z_std = scaler.fit_transform(Z).astype(np.float64)
 
         # === 2. HDBSCAN聚类
-        min_cluster_size = math.ceil(0.01 * len(Z_std))  # 这里设置总样本数的0.5%-2%作初始值
+        min_cluster_size = math.ceil(0.01 * len(Z_std))
         clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size,
                                     min_samples=None,
-                                    core_dist_n_jobs=1)  # min_samples：控制局部密度稳健性（建议与min_cluster_size同量级或稍小）
+                                    core_dist_n_jobs=1)
         labels = clusterer.fit_predict(Z_std)  # labels == -1 表示 noise
         unique_classes = np.unique(labels)
         print("找到的类别标签有:", unique_classes)
@@ -98,7 +98,7 @@ class IdentifyAbnormal:
         sorted_values = rounded_score[sorted_indices]
         score_dict = {i: (original_idx, value) for i, (original_idx, value) in
                       enumerate(zip(sorted_indices,
-                                    sorted_values))}  # 构建目标字典  例如，{0: (313, 1.0), 1: (557, 0.9226), 2: (109, 0.9253)}
+                                    sorted_values))}
 
         return score_dict
 
@@ -111,7 +111,7 @@ class IdentifyAbnormal:
 
         top100_ids_list = []
         results_summary = []
-        seen_results = set()  # 用于去重
+        seen_results = set()
         for n in range(len(th_list)):
             print(f'\n---------------第{n + 1}次阈值计算,th={th_list[n]}---------------')
             th = th_list[n]
@@ -120,7 +120,6 @@ class IdentifyAbnormal:
             ratio1 = round(count / len(self.fake_user_ids), 4)
             ratio2 = round(count / len(selected_indices), 4) if len(selected_indices) > 0 else 0.0
 
-            # 当前结果字符串
             key = (ratio1, ratio2)
 
             # 判断是否重复
@@ -147,7 +146,6 @@ class IdentifyAbnormal:
             k = len(target_item_list) * i
             top_target_ids_list = [sublist[:k] for sublist in top100_ids_list]
 
-            # 将不同阈值下的计算结果合并到一起，统计出现频次较高的商品为目标商品
             all_items = [item for sublist in top_target_ids_list for item in sublist]
             counter = Counter(all_items)
 
@@ -163,13 +161,13 @@ class IdentifyAbnormal:
                 earliest_min_list_idx[item] = min(li for li, pi in pairs if pi == minpos)
             unique_items = list(counter.keys())
             unique_items.sort(key=lambda x: (
-                -counter[x],  # 频数高在前
-                pos_multiset[x],  # 位置（按升序元组比较）
-                earliest_min_list_idx[x],  # 若“位置集合”相同，优先最早达到最小位置的列表
-                x  # 最后用 item_id 保证稳定性
+                -counter[x],
+                pos_multiset[x],
+                earliest_min_list_idx[x],
+                x
             ))
             top_target_ids = unique_items[:k]
-            count = len(set(target_item_list) & set(top_target_ids))  # 输出最终识别出的目标商品数量
+            count = len(set(target_item_list) & set(top_target_ids))
             DR = round(count / len(target_item_list), 4)
             DR_list.append(DR)
 
